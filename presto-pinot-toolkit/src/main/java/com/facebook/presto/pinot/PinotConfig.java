@@ -62,6 +62,13 @@ public class PinotConfig
     private String callerHeaderParam = "RPC-Caller";
 
     private List<String> controllerUrls = ImmutableList.of();
+
+    // Whether to use a reverse proxy for all requests.
+    // All requests will be made to a proxy server with a header containing the target destination
+    private boolean useReverseProxy;
+    private String reverseProxyUrl;
+    private String reverseProxyTargetHeaderName;
+
     private String restProxyUrl;
     private String restProxyServiceForQuery;
 
@@ -151,6 +158,26 @@ public class PinotConfig
     }
 
     @Nullable
+    public boolean iseUseReverseProxy(){return useReverseProxy;}
+
+    @Config("pinot.use-reverse-proxy")
+    public PinotConfig setUseReverseProxy(boolean useReverseProxy){
+        this.useReverseProxy = useReverseProxy;
+        return this;
+    }
+
+    @Nullable
+    public String getReverseProxyUrl(){ return reverseProxyUrl;}
+
+    @Config("pinot.reverse-proxy-url")
+    public PinotConfig setReverseProxyUrl(String reverseProxyUrl){
+        this.reverseProxyUrl = reverseProxyUrl;
+        return this;
+    }
+
+
+
+    @Nullable
     public String getRestProxyUrl()
     {
         return restProxyUrl;
@@ -160,6 +187,16 @@ public class PinotConfig
     public PinotConfig setRestProxyUrl(String restProxyUrl)
     {
         this.restProxyUrl = restProxyUrl;
+        return this;
+    }
+
+    @Nullable
+    public String getReverseProxyTargetHeaderName(){return reverseProxyTargetHeaderName;}
+
+    @Config("pinot.reverse-proxy-target-header-name")
+    public PinotConfig setReverseProxyTargetHeaderName(String reverseProxyTargetHeaderName)
+    {
+        this.reverseProxyTargetHeaderName = reverseProxyTargetHeaderName;
         return this;
     }
 

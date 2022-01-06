@@ -166,6 +166,13 @@ public class PinotClusterInfoFetcher
             requestBuilder.setBodyGenerator(StaticBodyGenerator.createStaticBodyGenerator(requestBody.get(), StandardCharsets.UTF_8));
         }
         pinotConfig.getExtraHttpHeaders().forEach(requestBuilder::setHeader);
+
+        if(pinotConfig.iseUseReverseProxy()){
+            URI targetUri = requestBuilder.build().getUri();
+            requestBuilder.setHeader(pinotConfig.getReverseProxyTargetHeaderName(), targetUri.toString());
+            requestBuilder.setUri(URI.create(pinotConfig.getReverseProxyUrl()));
+        }
+
         Request request = requestBuilder.build();
 
         long startTime = ticker.read();
