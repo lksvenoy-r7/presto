@@ -16,14 +16,19 @@ package com.facebook.presto.pinot;
 
 import com.facebook.airlift.http.client.HttpClient;
 import com.facebook.airlift.http.client.HttpStatus;
+import com.facebook.airlift.http.client.HttpUriBuilder;
+import com.facebook.airlift.http.client.Request;
 import com.facebook.airlift.http.client.testing.TestingHttpClient;
 import com.facebook.airlift.http.client.testing.TestingResponse;
 import com.facebook.presto.testing.assertions.Assert;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.net.HostAndPort;
 import com.google.common.net.MediaType;
 import io.airlift.units.Duration;
 import org.testng.annotations.Test;
 
+import java.net.URI;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 
 public class TestPinotClusterInfoFetcher
@@ -129,5 +134,45 @@ public class TestPinotClusterInfoFetcher
         Assert.assertEquals(instance.getTags().size(), 2);
         Assert.assertEquals(instance.getTags().get(0), "DefaultTenant_OFFLINE");
         Assert.assertEquals(instance.getTags().get(1), "DefaultTenant_REALTIME");
+    }
+
+    @Test
+    public void testReverseProxy()
+    {
+        testReverseProxy(true);
+        testReverseProxy(false);
+    }
+
+    private void testReverseProxy(boolean useHttps)
+    {
+        Request.Builder proxiedRequest = Request.Builder
+                .prepareGet()
+                .setUri(HttpUriBuilder.uriBuilder()
+                        .scheme("https")
+                        .hostAndPort(HostAndPort.fromString("proxied:7900"))
+                        .appendPath("/path/to/resource")
+                        .build());
+        PinotConfig pinotConfig = new PinotConfig()
+                .setMetadataCacheExpiry(new Duration(0, TimeUnit.MILLISECONDS))
+                .setUseReverseProxy(true)
+                .setReverseProxyUrl("proxy:7901")
+                .setReverseProxyTargetHeaderName("target")
+                .setUseHttpsForReverseProxy(useHttps);
+        HttpClient httpClient = new TestingHttpClient((request) -> {
+            Assert.assertEquals(request.getUri().getScheme(), useHttps ? "https" : "http");
+            Assert.assertEquals(request.getUri().getHost(), "proxy");
+            Assert.assertEquals(request.getUri().getPort(), 7901);
+            URI proxiedUri = URI.create(request.getHeader("target"));
+            Assert.assertEquals(proxiedUri.getScheme(), "https");
+            Assert.assertEquals(proxiedUri.getHost(), "proxied");
+            Assert.assertEquals(proxiedUri.getPort(), 7900);
+            Assert.assertEquals(proxiedUri.getPath(), "/path/to/resource");
+            return TestingResponse.mockResponse(
+                    HttpStatus.OK,
+                    MediaType.JSON_UTF_8,
+                    "{}");
+        });
+        PinotClusterInfoFetcher pinotClusterInfoFetcher = new PinotClusterInfoFetcher(pinotConfig, new PinotMetrics(), httpClient, MetadataUtil.TABLES_JSON_CODEC, MetadataUtil.BROKERS_FOR_TABLE_JSON_CODEC, MetadataUtil.ROUTING_TABLES_JSON_CODEC, MetadataUtil.ROUTING_TABLES_V2_JSON_CODEC, MetadataUtil.TIME_BOUNDARY_JSON_CODEC, MetadataUtil.INSTANCE_JSON_CODEC);
+        pinotClusterInfoFetcher.doHttpActionWithHeaders(proxiedRequest, Optional.empty(), Optional.empty());
     }
 }

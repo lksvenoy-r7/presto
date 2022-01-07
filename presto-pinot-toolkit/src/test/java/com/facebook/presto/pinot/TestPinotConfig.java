@@ -103,7 +103,7 @@ public class TestPinotConfig
                 .put("pinot.forbid-broker-queries", "true")
                 .put("pinot.use-pinot-sql-for-broker-queries", "false")
                 .put("pinot.use-reverse-proxy", "true")
-                .put("pinot-reverse-proxy-url", "localhost:2222")
+                .put("pinot.reverse-proxy-url", "localhost:2222")
                 .put("pinot.reverse-proxy-target-header-name", "target")
                 .put("pinot.rest-proxy-url", "localhost:1111")
                 .put("pinot.rest-proxy-service-for-query", "pinot-rest-proxy-service")
