@@ -171,12 +171,28 @@ public class PinotConfig
     }
 
     @Nullable
-    public String getReverseProxyUrl() { return reverseProxyUrl;}
+    public String getReverseProxyUrl()
+    {
+        return reverseProxyUrl;
+    }
 
     @Config("pinot.reverse-proxy-url")
     public PinotConfig setReverseProxyUrl(String reverseProxyUrl)
     {
         this.reverseProxyUrl = reverseProxyUrl;
+        return this;
+    }
+
+    @Nullable
+    public String getReverseProxyTargetHeaderName()
+    {
+        return reverseProxyTargetHeaderName;
+    }
+
+    @Config("pinot.reverse-proxy-target-header-name")
+    public PinotConfig setReverseProxyTargetHeaderName(String reverseProxyTargetHeaderName)
+    {
+        this.reverseProxyTargetHeaderName = reverseProxyTargetHeaderName;
         return this;
     }
 
@@ -190,16 +206,6 @@ public class PinotConfig
     public PinotConfig setRestProxyUrl(String restProxyUrl)
     {
         this.restProxyUrl = restProxyUrl;
-        return this;
-    }
-
-    @Nullable
-    public String getReverseProxyTargetHeaderName() {return reverseProxyTargetHeaderName;}
-
-    @Config("pinot.reverse-proxy-target-header-name")
-    public PinotConfig setReverseProxyTargetHeaderName(String reverseProxyTargetHeaderName)
-    {
-        this.reverseProxyTargetHeaderName = reverseProxyTargetHeaderName;
         return this;
     }
 
