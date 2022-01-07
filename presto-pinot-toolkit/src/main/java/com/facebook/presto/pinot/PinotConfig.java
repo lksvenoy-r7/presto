@@ -115,6 +115,7 @@ public class PinotConfig
     private boolean useHttpsForController;
     private boolean useHttpsForBroker;
     private boolean useHttpsForProxy;
+    private boolean useHttpsForReverseProxy;
     private Map<String, String> extraGrpcMetadata = ImmutableMap.of();
     private String overrideDistinctCountFunction = PINOT_DISTINCT_COUNT_FUNCTION_NAME;
 
@@ -157,8 +158,10 @@ public class PinotConfig
         return this;
     }
 
-    @Nullable
-    public boolean iseUseReverseProxy() {return useReverseProxy;}
+    public boolean isUseReverseProxy()
+    {
+        return useReverseProxy;
+    }
 
     @Config("pinot.use-reverse-proxy")
     public PinotConfig setUseReverseProxy(boolean useReverseProxy)
@@ -663,6 +666,18 @@ public class PinotConfig
     public PinotConfig setUseHttpsForProxy(boolean useHttpsForProxy)
     {
         this.useHttpsForProxy = useHttpsForProxy;
+        return this;
+    }
+
+    public boolean isUseHttpsForReverseProxy()
+    {
+        return this.useHttpsForReverseProxy;
+    }
+
+    @Config("pinot.use-https-for-reverse-proxy")
+    public PinotConfig setUseHttpsForReverseProxy(boolean useHttpsForReverseProxy)
+    {
+        this.useHttpsForReverseProxy = useHttpsForReverseProxy;
         return this;
     }
 

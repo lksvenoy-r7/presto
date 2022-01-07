@@ -167,10 +167,15 @@ public class PinotClusterInfoFetcher
         }
         pinotConfig.getExtraHttpHeaders().forEach(requestBuilder::setHeader);
 
-        if (pinotConfig.iseUseReverseProxy()) {
+        if (pinotConfig.isUseReverseProxy()) {
             URI targetUri = requestBuilder.build().getUri();
             requestBuilder.setHeader(pinotConfig.getReverseProxyTargetHeaderName(), targetUri.toString());
-            requestBuilder.setUri(URI.create(pinotConfig.getReverseProxyUrl()));
+            URI reverseProxyUri = HttpUriBuilder
+                    .uriBuilder()
+                    .scheme(pinotConfig.isUseHttpsForReverseProxy() ? HTTPS_SCHEME : HTTP_SCHEME)
+                    .hostAndPort(HostAndPort.fromString(pinotConfig.getReverseProxyUrl()))
+                    .build();
+            requestBuilder.setUri(reverseProxyUri);
         }
 
         Request request = requestBuilder.build();
