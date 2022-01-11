@@ -50,7 +50,7 @@ public class PinotConnectorFactory
     @Override
     public String getName()
     {
-        return "pinot";
+        return "r7pinot";
     }
 
     @Override
