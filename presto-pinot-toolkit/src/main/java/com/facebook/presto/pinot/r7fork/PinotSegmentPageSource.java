@@ -108,9 +108,9 @@ public class PinotSegmentPageSource
         });
         if (!exceptions.isEmpty()) {
             throw new PinotException(
-                markDataFetchExceptionsAsRetriable ? PINOT_DATA_FETCH_EXCEPTION : PINOT_EXCEPTION,
-                split.getSegmentPinotQuery(),
-                String.format("Encountered %d pinot exceptions for split %s: %s", exceptions.size(), split, exceptions));
+                    markDataFetchExceptionsAsRetriable ? PINOT_DATA_FETCH_EXCEPTION : PINOT_EXCEPTION,
+                    split.getSegmentPinotQuery(),
+                    String.format("Encountered %d pinot exceptions for split %s: %s", exceptions.size(), split, exceptions));
         }
         int numColumnsExpected = split.getExpectedColumnHandles().size();
         int numColumnsActual = dataTable.getDataSchema().size();

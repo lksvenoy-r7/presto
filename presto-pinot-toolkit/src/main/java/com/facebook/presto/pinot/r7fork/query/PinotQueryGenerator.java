@@ -231,14 +231,14 @@ public class PinotQueryGenerator
         public String toString()
         {
             return toStringHelper(this)
-                .add("query", query)
-                .add("format", format)
-                .add("table", table)
-                .add("expectedColumnIndices", expectedColumnIndices)
-                .add("groupByClauses", groupByClauses)
-                .add("haveFilter", haveFilter)
-                .add("isQueryShort", isQueryShort)
-                .toString();
+                    .add("query", query)
+                    .add("format", format)
+                    .add("table", table)
+                    .add("expectedColumnIndices", expectedColumnIndices)
+                    .add("groupByClauses", groupByClauses)
+                    .add("haveFilter", haveFilter)
+                    .add("isQueryShort", isQueryShort)
+                    .toString();
         }
     }
 
@@ -626,7 +626,7 @@ public class PinotQueryGenerator
                 LinkedHashSet<VariableReferenceExpression> outputs,
                 Set<VariableReferenceExpression> hiddenColumnSet)
         {
-            VariableReferenceExpression hidden = new VariableReferenceExpression(UUID.randomUUID().toString(), BigintType.BIGINT);
+            VariableReferenceExpression hidden = new VariableReferenceExpression(Optional.empty(), UUID.randomUUID().toString(), BigintType.BIGINT);
             selections.put(hidden, new Selection("count(*)", DERIVED));
             outputs.add(hidden);
             hiddenColumnSet.add(hidden);

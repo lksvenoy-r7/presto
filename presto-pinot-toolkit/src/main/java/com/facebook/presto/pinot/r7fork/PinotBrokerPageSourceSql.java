@@ -13,6 +13,7 @@
  */
 package com.facebook.presto.pinot.r7fork;
 
+import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.Type;
 import com.facebook.presto.pinot.r7fork.query.PinotQueryGenerator.GeneratedPinotQuery;
@@ -22,6 +23,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -37,16 +39,19 @@ public class PinotBrokerPageSourceSql
     private static final String QUERY_URL_TEMPLATE = "http://%s/query/sql";
 
     private final GeneratedPinotQuery brokerSql;
+    private final List<PinotColumnHandle> expectedHandles;
 
     public PinotBrokerPageSourceSql(
             PinotConfig pinotConfig,
             ConnectorSession session,
             GeneratedPinotQuery brokerSql,
             List<PinotColumnHandle> columnHandles,
+            List<PinotColumnHandle> expectedHandles,
             PinotClusterInfoFetcher clusterInfoFetcher,
             ObjectMapper objectMapper)
     {
         super(pinotConfig, session, columnHandles, clusterInfoFetcher, objectMapper);
+        this.expectedHandles = requireNonNull(expectedHandles, "expected handles is null");
         this.brokerSql = requireNonNull(brokerSql, "broker is null");
     }
 
@@ -90,9 +95,9 @@ public class PinotBrokerPageSourceSql
             JsonNode dataSchema = resultTable.get("dataSchema");
             if (dataSchema == null) {
                 throw new PinotException(
-                    PINOT_UNEXPECTED_RESPONSE,
-                    Optional.of(sql),
-                    String.format("Expected data schema in the response"));
+                        PINOT_UNEXPECTED_RESPONSE,
+                        Optional.of(sql),
+                        String.format("Expected data schema in the response"));
             }
             JsonNode columnDataTypes = dataSchema.get("columnDataTypes");
             JsonNode columnNames = dataSchema.get("columnNames");
@@ -101,30 +106,24 @@ public class PinotBrokerPageSourceSql
                     || !columnDataTypes.isArray()
                     || columnDataTypes.size() < blockBuilders.size()) {
                 throw new PinotException(
-                    PINOT_UNEXPECTED_RESPONSE,
-                    Optional.of(sql),
-                    String.format("ColumnDataTypes and results expected for %s, expected %d columnDataTypes but got %d", sql, blockBuilders.size(), columnDataTypes == null ? 0 : columnDataTypes.size()));
+                        PINOT_UNEXPECTED_RESPONSE,
+                        Optional.of(sql),
+                        String.format("ColumnDataTypes and results expected for %s, expected %d columnDataTypes but got %d", sql, blockBuilders.size(), columnDataTypes == null ? 0 : columnDataTypes.size()));
             }
             if (columnNames == null
                     || !columnNames.isArray()
                     || columnNames.size() < blockBuilders.size()) {
                 throw new PinotException(
-                    PINOT_UNEXPECTED_RESPONSE,
-                    Optional.of(sql),
-                    String.format("ColumnNames and results expected for %s, expected %d columnNames but got %d", sql, blockBuilders.size(), columnNames == null ? 0 : columnNames.size()));
+                        PINOT_UNEXPECTED_RESPONSE,
+                        Optional.of(sql),
+                        String.format("ColumnNames and results expected for %s, expected %d columnNames but got %d", sql, blockBuilders.size(), columnNames == null ? 0 : columnNames.size()));
             }
 
             JsonNode rows = resultTable.get("rows");
-            checkState(rows.size() >= 1, "Expected at least one row to be present");
             setRows(sql, blockBuilders, types, rows);
             return rows.size();
         }
-        else {
-            throw new PinotException(
-                    PINOT_UNEXPECTED_RESPONSE,
-                    Optional.of(sql),
-                    "Expected resultTable to be present");
-        }
+        return 0;
     }
 
     @VisibleForTesting
@@ -132,10 +131,41 @@ public class PinotBrokerPageSourceSql
     public BlockAndTypeBuilder buildBlockAndTypeBuilder(List<PinotColumnHandle> columnHandles,
             GeneratedPinotQuery brokerSql)
     {
-        // SQL broker page source returns the columns in the order requested by Presto.
-        List<Type> columnTypes = columnHandles.stream()
+        // When we created the SQL, we came up with some column handles
+        // however other optimizers post-pushdown can come in and prune/re-order the required column handles
+        // so we need to map from the column handles the PQL corresponds to, to the actual column handles
+        // needed in the scan.
+
+        List<Type> expectedTypes = columnHandles.stream()
                 .map(PinotColumnHandle::getDataType)
                 .collect(Collectors.toList());
-        return new BlockAndTypeBuilder(columnTypes);
+        PageBuilder pageBuilder = new PageBuilder(expectedTypes);
+
+        // The expectedColumnHandles are the handles corresponding to the generated SQL
+        // However, the engine could end up requesting only a permutation/subset of those handles
+        // during the actual scan
+
+        // Map the handles from planning time to the handles asked in the scan
+        // so that we know which columns to discard.
+        int[] handleMapping = new int[expectedHandles.size()];
+        for (int i = 0; i < handleMapping.length; ++i) {
+            handleMapping[i] = columnHandles.indexOf(expectedHandles.get(i));
+        }
+
+        ArrayList<BlockBuilder> columnBlockBuilders = new ArrayList<>();
+        ArrayList<Type> columnTypes = new ArrayList<>();
+
+        for (int expectedColumnIndex : brokerSql.getExpectedColumnIndices()) {
+            // columnIndex is the index of this column in the current scan
+            // It is obtained from the mapping and can be -ve, which means that the
+            // expectedColumnIndex'th column returned by Pinot can be discarded.
+            int columnIndex = -1;
+            if (expectedColumnIndex >= 0) {
+                columnIndex = handleMapping[expectedColumnIndex];
+            }
+            columnBlockBuilders.add(columnIndex >= 0 ? pageBuilder.getBlockBuilder(columnIndex) : null);
+            columnTypes.add(columnIndex >= 0 ? expectedTypes.get(columnIndex) : null);
+        }
+        return new BlockAndTypeBuilder(pageBuilder, columnBlockBuilders, columnTypes);
     }
 }

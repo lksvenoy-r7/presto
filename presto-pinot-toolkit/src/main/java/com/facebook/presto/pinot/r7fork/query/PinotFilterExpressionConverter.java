@@ -90,6 +90,16 @@ public class PinotFilterExpressionConverter
                         .collect(Collectors.joining(", "))));
     }
 
+    private PinotExpression handleIsNull(
+            SpecialFormExpression specialForm,
+            boolean isWhitelist,
+            Function<VariableReferenceExpression, Selection> context)
+    {
+        return derived(format("(%s %s)",
+                specialForm.getArguments().get(0).accept(this, context).getDefinition(),
+                isWhitelist ? "IS NULL" : "IS NOT NULL"));
+    }
+
     private PinotExpression handleLogicalBinary(
             String operator,
             CallExpression call,
@@ -248,6 +258,9 @@ public class PinotFilterExpressionConverter
                 if (specialFormExpression.getForm() == SpecialFormExpression.Form.IN) {
                     return handleIn(specialFormExpression, false, context);
                 }
+                if (specialFormExpression.getForm() == SpecialFormExpression.Form.IS_NULL) {
+                    return handleIsNull(specialFormExpression, false, context);
+                }
             }
         }
 
@@ -318,7 +331,7 @@ public class PinotFilterExpressionConverter
         // Handle queries like `eventTimestamp < 1391126400000`.
         // Otherwise TypeManager.canCoerce(...) will return false and directly fail this query.
         if (functionMetadata.getName().getObjectName().equalsIgnoreCase("$literal$timestamp") ||
-                    functionMetadata.getName().getObjectName().equalsIgnoreCase("$literal$date")) {
+                functionMetadata.getName().getObjectName().equalsIgnoreCase("$literal$date")) {
             return handleDateAndTimestampMagicLiteralFunction(call, context);
         }
         throw new PinotException(PINOT_UNSUPPORTED_EXPRESSION, Optional.empty(), format("function %s not supported in filter", call));
@@ -370,7 +383,6 @@ public class PinotFilterExpressionConverter
             case NULL_IF:
             case SWITCH:
             case WHEN:
-            case IS_NULL:
             case COALESCE:
             case DEREFERENCE:
             case ROW_CONSTRUCTOR:
@@ -385,6 +397,8 @@ public class PinotFilterExpressionConverter
                         specialForm.getArguments().get(0).accept(this, context).getDefinition(),
                         specialForm.getForm().toString(),
                         specialForm.getArguments().get(1).accept(this, context).getDefinition()));
+            case IS_NULL:
+                return handleIsNull(specialForm, true, context);
             default:
                 throw new PinotException(PINOT_UNSUPPORTED_EXPRESSION, Optional.empty(), "Unexpected special form: " + specialForm);
         }

@@ -247,15 +247,16 @@ public abstract class PinotBrokerPageSourceBase
             JsonNode result = rows.get(rowNumber);
             if (result == null || result.size() < blockBuilders.size()) {
                 throw new PinotException(
-                    PINOT_UNEXPECTED_RESPONSE,
-                    Optional.of(query),
-                    String.format("Expected row of %d columns", blockBuilders.size()));
+                        PINOT_UNEXPECTED_RESPONSE,
+                        Optional.of(query),
+                        String.format("Expected row of %d columns", blockBuilders.size()));
             }
             for (int columnNumber = 0; columnNumber < blockBuilders.size(); columnNumber++) {
                 setValue(types.get(columnNumber), blockBuilders.get(columnNumber), result.get(columnNumber));
             }
         }
     }
+
     protected static void handleCommonResponse(String pql, JsonNode jsonBody)
     {
         JsonNode numServersResponded = jsonBody.get("numServersResponded");
@@ -263,9 +264,9 @@ public abstract class PinotBrokerPageSourceBase
 
         if (numServersQueried == null || numServersResponded == null || numServersQueried.asInt() > numServersResponded.asInt()) {
             throw new PinotException(
-                PINOT_INSUFFICIENT_SERVER_RESPONSE,
-                Optional.of(pql),
-                String.format("Only %s out of %s servers responded for query %s", numServersResponded.asInt(), numServersQueried.asInt(), pql));
+                    PINOT_INSUFFICIENT_SERVER_RESPONSE,
+                    Optional.of(pql),
+                    String.format("Only %s out of %s servers responded for query %s", numServersResponded.asInt(), numServersQueried.asInt(), pql));
         }
 
         JsonNode exceptions = jsonBody.get("exceptions");
@@ -273,9 +274,9 @@ public abstract class PinotBrokerPageSourceBase
             // Pinot is known to return exceptions with benign errorcodes like 200
             // so we treat any exception as an error
             throw new PinotException(
-                PINOT_EXCEPTION,
-                Optional.of(pql),
-                String.format("Query %s encountered exception %s", pql, exceptions.get(0)));
+                    PINOT_EXCEPTION,
+                    Optional.of(pql),
+                    String.format("Query %s encountered exception %s", pql, exceptions.get(0)));
         }
     }
 
