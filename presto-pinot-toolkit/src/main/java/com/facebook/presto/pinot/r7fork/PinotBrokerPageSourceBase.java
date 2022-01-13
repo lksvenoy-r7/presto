@@ -64,6 +64,8 @@ import static java.util.Objects.requireNonNull;
 public abstract class PinotBrokerPageSourceBase
         implements ConnectorPageSource
 {
+    private static final String HTTPS_SCHEME = "https";
+    private static final String HTTP_SCHEME = "http";
     private static final String PINOT_INFINITY = "∞";
     private static final String PINOT_POSITIVE_INFINITY = "+" + PINOT_INFINITY;
     private static final String PINOT_NEGATIVE_INFINITY = "-" + PINOT_INFINITY;
@@ -311,19 +313,19 @@ public abstract class PinotBrokerPageSourceBase
             List<Type> types)
     {
         return doWithRetries(PinotSessionProperties.getPinotRetryCount(session), (retryNumber) -> {
-            String queryHost;
+            URI queryUri;
             Optional<String> rpcService;
             if (pinotConfig.getRestProxyUrl() != null) {
-                queryHost = pinotConfig.getRestProxyUrl();
+                queryUri = URI.create(String.format(getQueryUrlTemplate(), pinotConfig.isUseHttpsForProxy() ? HTTPS_SCHEME : HTTP_SCHEME, pinotConfig.getRestProxyUrl()));
                 rpcService = Optional.ofNullable(pinotConfig.getRestProxyServiceForQuery());
             }
             else {
-                queryHost = clusterInfoFetcher.getBrokerHost(pinotQuery.getTable());
+                queryUri = URI.create(String.format(getQueryUrlTemplate(), pinotConfig.isUseHttpsForBroker() ? HTTPS_SCHEME : HTTP_SCHEME, clusterInfoFetcher.getBrokerHost(pinotQuery.getTable())));
                 rpcService = Optional.empty();
             }
             Request.Builder builder = Request.Builder
                     .preparePost()
-                    .setUri(URI.create(String.format(getQueryUrlTemplate(), queryHost)));
+                    .setUri(queryUri);
             String body = clusterInfoFetcher.doHttpActionWithHeaders(builder, Optional.of(getRequestPayload(pinotQuery)), rpcService);
             return populateFromQueryResults(pinotQuery, blockBuilders, types, body);
         });
