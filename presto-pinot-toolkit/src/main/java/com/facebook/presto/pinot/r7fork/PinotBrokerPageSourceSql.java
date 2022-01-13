@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static com.facebook.presto.pinot.r7fork.PinotErrorCode.PINOT_UNEXPECTED_RESPONSE;
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
 
 public class PinotBrokerPageSourceSql

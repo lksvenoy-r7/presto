@@ -173,7 +173,6 @@ public class TestPinotQueryGeneratorSql
                 ImmutableMap.of());
 
         TopNNode topN = new TopNNode(
-                Optional.empty(),
                 planBuilder.getIdAllocator().getNextId(),
                 aggregationNode,
                 50L,
@@ -187,7 +186,6 @@ public class TestPinotQueryGeneratorSql
                 ImmutableMap.of());
 
         topN = new TopNNode(
-                Optional.empty(),
                 planBuilder.getIdAllocator().getNextId(),
                 aggregationNode,
                 1000L,
@@ -201,7 +199,6 @@ public class TestPinotQueryGeneratorSql
                 ImmutableMap.of());
 
         topN = new TopNNode(
-                Optional.empty(),
                 planBuilder.getIdAllocator().getNextId(),
                 aggregationNode,
                 1000L,
@@ -226,7 +223,7 @@ public class TestPinotQueryGeneratorSql
                         .singleGroupingSet(variable("city"))
                         .addAggregation(planBuilder.variable("sum_fare"), getRowExpression("sum(fare)", defaultSessionHolder)));
         pinotConfig.setPushdownTopNBrokerQueries(false);
-        TopNNode topN = new TopNNode(Optional.empty(), planBuilder.getIdAllocator().getNextId(), aggregationNode, 1000,
+        TopNNode topN = new TopNNode(planBuilder.getIdAllocator().getNextId(), aggregationNode, 1000,
                 new OrderingScheme(ImmutableList.of(new Ordering(variable("sum_fare"), SortOrder.ASC_NULLS_FIRST))),
                 TopNNode.Step.SINGLE);
         Optional<PinotQueryGenerator.PinotQueryGeneratorResult> generatedQuery =

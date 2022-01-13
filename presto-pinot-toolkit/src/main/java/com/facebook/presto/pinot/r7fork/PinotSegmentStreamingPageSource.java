@@ -15,9 +15,9 @@ package com.facebook.presto.pinot.r7fork;
 
 import com.facebook.presto.common.Page;
 import com.facebook.presto.pinot.grpc.Constants;
-import com.facebook.presto.pinot.grpc.GrpcRequestBuilder;
 import com.facebook.presto.pinot.grpc.PinotStreamingQueryClient;
 import com.facebook.presto.pinot.grpc.ServerResponse;
+import com.facebook.presto.pinot.r7fork.query.PinotProxyGrpcRequestBuilder;
 import com.facebook.presto.spi.ConnectorSession;
 import org.apache.pinot.common.utils.DataTable;
 
