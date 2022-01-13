@@ -60,6 +60,7 @@ public class TestPinotConfig
                         .setUseHttpsForController(false)
                         .setUseHttpsForBroker(false)
                         .setUseHttpsForProxy(false)
+                        .setUseHttpsForGrpcProxy(false)
                         .setNumSegmentsPerSplit(1)
                         .setFetchRetryCount(2)
                         .setMarkDataFetchExceptionsAsRetriable(true)
