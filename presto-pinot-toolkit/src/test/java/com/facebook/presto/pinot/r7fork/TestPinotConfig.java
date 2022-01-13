@@ -118,6 +118,7 @@ public class TestPinotConfig
                 .put("pinot.use-https-for-controller", "true")
                 .put("pinot.use-https-for-broker", "true")
                 .put("pinot.use-https-for-proxy", "true")
+                .put("pinot.use-https-for-grpc-proxy", "true")
                 .put("pinot.override-distinct-count-function", "distinctCountBitmap")
                 .build();
 
@@ -164,7 +165,8 @@ public class TestPinotConfig
                 .setUseDateTrunc(true)
                 .setUseHttpsForController(true)
                 .setUseHttpsForBroker(true)
-                .setUseHttpsForProxy(true);
+                .setUseHttpsForProxy(true)
+                .setUseHttpsForGrpcProxy(true);
 
         ConfigAssertions.assertFullMapping(properties, expected);
     }
