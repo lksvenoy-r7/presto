@@ -28,11 +28,13 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.facebook.presto.common.type.BigintType.BIGINT;
+import static com.facebook.presto.common.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.common.type.DoubleType.DOUBLE;
 import static com.facebook.presto.common.type.IntegerType.INTEGER;
 import static com.facebook.presto.common.type.VarbinaryType.VARBINARY;
 import static com.facebook.presto.common.type.VarcharType.VARCHAR;
 import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
 
 public class TestPinotColumnMetadata
 {
@@ -76,14 +78,14 @@ public class TestPinotColumnMetadata
                 .put("singleValueFloatDimension", DOUBLE)
                 .put("singleValueDoubleDimension", DOUBLE)
                 .put("singleValueBytesDimension", VARBINARY)
-                .put("singleValueBooleanDimension", VARCHAR)
+                .put("singleValueBooleanDimension", BOOLEAN)
                 .put("singleValueStringDimension", VARCHAR)
                 .put("multiValueIntDimension", new ArrayType(INTEGER))
                 .put("multiValueLongDimension", new ArrayType(BIGINT))
                 .put("multiValueFloatDimension", new ArrayType(DOUBLE))
                 .put("multiValueDoubleDimension", new ArrayType(DOUBLE))
                 .put("multiValueBytesDimension", new ArrayType(VARBINARY))
-                .put("multiValueBooleanDimension", new ArrayType(VARCHAR))
+                .put("multiValueBooleanDimension", new ArrayType(BOOLEAN))
                 .put("multiValueStringDimension", new ArrayType(VARCHAR))
                 .put("intMetric", INTEGER)
                 .put("longMetric", BIGINT)
@@ -128,7 +130,7 @@ public class TestPinotColumnMetadata
         for (PinotColumn column : pinotColumns) {
             assertEquals(column.getType(), expectedTypeMap.get(column.getName()), "Failed to compare column type for field - " + column.getName());
             assertEquals(column.getComment(), expectedComment.get(column.getName()), "Failed to compare column comment for field - " + column.getName());
-            assertEquals(column.isNullable(), false);
+            assertFalse(column.isNullable());
         }
     }
 
