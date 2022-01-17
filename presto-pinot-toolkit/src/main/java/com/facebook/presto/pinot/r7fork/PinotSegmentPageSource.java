@@ -413,7 +413,7 @@ public class PinotSegmentPageSource
 
     private boolean getBoolean(int rowIndex, int columnIndex)
     {
-        return Boolean.getBoolean(currentDataTable.getDataTable().getString(rowIndex, columnIndex));
+        return currentDataTable.getDataTable().getInt(rowIndex, columnIndex) == 1;
     }
 
     private long getLong(int rowIndex, int columnIndex)
