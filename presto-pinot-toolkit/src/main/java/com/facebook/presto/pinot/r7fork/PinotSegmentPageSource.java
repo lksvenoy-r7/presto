@@ -18,9 +18,6 @@ import com.facebook.presto.common.PageBuilder;
 import com.facebook.presto.common.block.BlockBuilder;
 import com.facebook.presto.common.type.ArrayType;
 import com.facebook.presto.common.type.Type;
-import com.facebook.presto.pinot.PinotScatterGatherQueryClient;
-import com.facebook.presto.pinot.PinotScatterGatherQueryClient.ErrorCode;
-import com.facebook.presto.pinot.ServerInstance;
 import com.facebook.presto.spi.ConnectorPageSource;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.PrestoException;
@@ -29,6 +26,8 @@ import io.airlift.slice.Slice;
 import io.airlift.slice.Slices;
 import org.apache.pinot.common.utils.DataSchema;
 import org.apache.pinot.common.utils.DataTable;
+import org.apache.pinot.connector.presto.PinotScatterGatherQueryClient;
+import org.apache.pinot.core.transport.ServerInstance;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,10 +58,10 @@ import static java.util.Objects.requireNonNull;
 public class PinotSegmentPageSource
         implements ConnectorPageSource
 {
-    private static final Map<ErrorCode, PinotErrorCode> PINOT_ERROR_CODE_MAP = ImmutableMap.of(
-            ErrorCode.PINOT_UNCLASSIFIED_ERROR, PINOT_UNCLASSIFIED_ERROR,
-            ErrorCode.PINOT_INSUFFICIENT_SERVER_RESPONSE, PINOT_INSUFFICIENT_SERVER_RESPONSE,
-            ErrorCode.PINOT_INVALID_PQL_GENERATED, PINOT_INVALID_PQL_GENERATED);
+    private static final Map<PinotScatterGatherQueryClient.ErrorCode, PinotErrorCode> PINOT_ERROR_CODE_MAP = ImmutableMap.of(
+            PinotScatterGatherQueryClient.ErrorCode.PINOT_UNCLASSIFIED_ERROR, PINOT_UNCLASSIFIED_ERROR,
+            PinotScatterGatherQueryClient.ErrorCode.PINOT_INSUFFICIENT_SERVER_RESPONSE, PINOT_INSUFFICIENT_SERVER_RESPONSE,
+            PinotScatterGatherQueryClient.ErrorCode.PINOT_INVALID_PQL_GENERATED, PINOT_INVALID_PQL_GENERATED);
 
     protected final List<PinotColumnHandle> columnHandles;
     protected final List<Type> columnTypes;

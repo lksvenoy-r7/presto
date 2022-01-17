@@ -14,12 +14,13 @@
 package com.facebook.presto.pinot.r7fork;
 
 import com.facebook.presto.common.Page;
-import com.facebook.presto.pinot.grpc.Constants;
-import com.facebook.presto.pinot.grpc.PinotStreamingQueryClient;
-import com.facebook.presto.pinot.grpc.ServerResponse;
 import com.facebook.presto.pinot.r7fork.query.PinotProxyGrpcRequestBuilder;
 import com.facebook.presto.spi.ConnectorSession;
+import org.apache.pinot.common.proto.Server;
 import org.apache.pinot.common.utils.DataTable;
+import org.apache.pinot.connector.presto.grpc.PinotStreamingQueryClient;
+import org.apache.pinot.core.common.datatable.DataTableFactory;
+import org.apache.pinot.spi.utils.CommonConstants;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -39,7 +40,7 @@ public class PinotSegmentStreamingPageSource
         extends PinotSegmentPageSource
 {
     private final PinotStreamingQueryClient pinotStreamingQueryClient;
-    private Iterator<ServerResponse> serverResponseIterator;
+    private Iterator<Server.ServerResponse> serverResponseIterator;
     private long completedPositions;
 
     public PinotSegmentStreamingPageSource(
@@ -80,15 +81,16 @@ public class PinotSegmentStreamingPageSource
             // So we need to check ResponseType of each ServerResponse.
             if (serverResponseIterator.hasNext()) {
                 long startTimeNanos = System.nanoTime();
-                ServerResponse serverResponse = serverResponseIterator.next();
+                Server.ServerResponse serverResponse = serverResponseIterator.next();
                 readTimeNanos += System.nanoTime() - startTimeNanos;
-                switch (serverResponse.getResponseType()) {
-                    case Constants.Response.ResponseType.DATA:
+                String responseType = serverResponse.getMetadataMap().get(CommonConstants.Query.Response.MetadataKeys.RESPONSE_TYPE);
+                switch (responseType) {
+                    case CommonConstants.Query.Response.ResponseType.DATA:
                         estimatedMemoryUsageInBytes = serverResponse.getSerializedSize();
                         // Store each dataTable which will later be constructed into Pages.
                         try {
-                            byteBuffer = serverResponse.getPayloadReadOnlyByteBuffer();
-                            DataTable dataTable = serverResponse.getDataTable(byteBuffer);
+                            byteBuffer = serverResponse.getPayload().asReadOnlyByteBuffer();
+                            DataTable dataTable = DataTableFactory.getDataTable(byteBuffer);
                             checkExceptions(dataTable, split, PinotSessionProperties.isMarkDataFetchExceptionsAsRetriable(session));
                             currentDataTable = new PinotSegmentPageSource.PinotDataTableWithSize(dataTable, serverResponse.getSerializedSize());
                         }
@@ -100,7 +102,7 @@ public class PinotSegmentStreamingPageSource
                                     e);
                         }
                         break;
-                    case Constants.Response.ResponseType.METADATA:
+                    case CommonConstants.Query.Response.ResponseType.METADATA:
                         // The last part of the response is Metadata
                         currentDataTable = null;
                         serverResponseIterator = null;
@@ -110,7 +112,7 @@ public class PinotSegmentStreamingPageSource
                         throw new PinotException(
                                 PINOT_UNEXPECTED_RESPONSE,
                                 split.getSegmentPinotQuery(),
-                                String.format("Encountered Pinot exceptions, unknown response type - %s", serverResponse.getResponseType()));
+                                String.format("Encountered Pinot exceptions, unknown response type - %s", responseType));
                 }
             }
             Page page = fillNextPage();
@@ -124,7 +126,7 @@ public class PinotSegmentStreamingPageSource
         }
     }
 
-    private Iterator<ServerResponse> queryPinot(PinotSplit split)
+    private Iterator<Server.ServerResponse> queryPinot(PinotSplit split)
     {
         String sql = split.getSegmentPinotQuery().orElseThrow(() -> new PinotException(PINOT_INVALID_SEGMENT_QUERY_GENERATED, Optional.empty(), "Expected the segment split to contain the pinot query"));
         String grpcHost = split.getGrpcHost().orElseThrow(() -> new PinotException(PINOT_INVALID_SEGMENT_QUERY_GENERATED, Optional.empty(), "Expected the segment split to contain the grpc host"));

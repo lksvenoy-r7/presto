@@ -13,8 +13,6 @@
  */
 package com.facebook.presto.pinot.r7fork;
 
-import com.facebook.presto.pinot.PinotScatterGatherQueryClient;
-import com.facebook.presto.pinot.grpc.PinotStreamingQueryClient;
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorId;
 import com.facebook.presto.spi.ConnectorPageSource;
@@ -25,6 +23,9 @@ import com.facebook.presto.spi.SplitContext;
 import com.facebook.presto.spi.connector.ConnectorPageSourceProvider;
 import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.pinot.common.utils.grpc.GrpcQueryClient;
+import org.apache.pinot.connector.presto.PinotScatterGatherQueryClient;
+import org.apache.pinot.connector.presto.grpc.PinotStreamingQueryClient;
 
 import javax.inject.Inject;
 
@@ -59,7 +60,7 @@ public class PinotPageSourceProvider
                 pinotConfig.getMinConnectionsPerServer(),
                 pinotConfig.getMaxBacklogPerServer(),
                 pinotConfig.getMaxConnectionsPerServer()));
-        this.pinotStreamingQueryClient = new PinotStreamingQueryClient(new PinotStreamingQueryClient.Config(
+        this.pinotStreamingQueryClient = new PinotStreamingQueryClient(new GrpcQueryClient.Config(
                 pinotConfig.getStreamingServerGrpcMaxInboundMessageBytes(),
                 !pinotConfig.isUseHttpsForGrpcProxy()));
         this.clusterInfoFetcher = requireNonNull(clusterInfoFetcher, "cluster info fetcher is null");
